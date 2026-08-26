@@ -24,10 +24,10 @@ export const authApiSlice = apiSlice.injectEndpoints({
       },
     }),
     googleLogin: builder.mutation({
-      query: (idToken) => ({
+      query: (payload) => ({
         url: '/auth/google',
         method: 'POST',
-        body: { idToken },
+        body: typeof payload === 'string' ? { credential: payload } : payload,
       }),
       async onQueryStarted(arg, { dispatch, queryFulfilled }) {
         try {

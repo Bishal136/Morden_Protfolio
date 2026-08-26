@@ -11,7 +11,7 @@ export const parseVideoUrl = (url) => {
 
   // 1. YouTube (watch?v=, youtu.be/, embed/, shorts/)
   const youtubeMatch = trimmed.match(
-    /(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?|shorts)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/i
+    /(?:youtube\.com\/(?:[^/]+\/.+\/|(?:v|e(?:mbed)?|shorts)\/|.*[?&]v=)|youtu\.be\/)([^"&?/\s]{11})/i
   );
   if (youtubeMatch && youtubeMatch[1]) {
     return {

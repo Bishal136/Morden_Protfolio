@@ -8,13 +8,12 @@ import {
   RefreshCw,
   CheckCircle2,
   AlertCircle,
-  ExternalLink,
 } from 'lucide-react';
 import {
   useUploadImageMutation,
   useUploadVideoMutation,
 } from '../../features/upload/uploadApiSlice';
-import { parseVideoUrl, VideoPlayer } from './VideoPlayer';
+import { VideoPlayer } from './VideoPlayer';
 
 export const MediaUploadField = ({
   type = 'image', // 'image' | 'video'
