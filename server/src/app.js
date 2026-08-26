@@ -26,19 +26,36 @@ app.use(
 );
 
 // CORS Configuration
-const allowedOrigins = [
-  process.env.CLIENT_ORIGIN || 'http://localhost:5173',
-  'http://127.0.0.1:5173',
+const defaultOrigins = [
+  'http://localhost:5173',
+  'http://localhost:3000',
+  'https://bishalprotfolio.vercel.app',
 ];
+
+const envOrigins = process.env.CLIENT_ORIGIN
+  ? process.env.CLIENT_ORIGIN.split(',').map((o) => o.trim())
+  : [];
+
+const allowedOrigins = Array.from(
+  new Set([...defaultOrigins, ...envOrigins])
+).map((origin) => origin.replace(/\/+$/, ''));
 
 app.use(
   cors({
     origin: (origin, callback) => {
       // Allow requests with no origin (e.g. mobile apps, curl, postman)
-      if (!origin || allowedOrigins.includes(origin)) {
+      if (!origin) return callback(null, true);
+
+      const cleanOrigin = origin.replace(/\/+$/, '');
+      if (
+        allowedOrigins.includes(cleanOrigin) ||
+        cleanOrigin.endsWith('.vercel.app')
+      ) {
         return callback(null, true);
       }
-      return callback(new Error(`CORS policy does not allow access from origin: ${origin}`));
+      return callback(
+        new Error(`CORS policy does not allow access from origin: ${origin}`)
+      );
     },
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
