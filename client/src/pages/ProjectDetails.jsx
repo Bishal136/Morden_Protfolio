@@ -9,7 +9,6 @@ import {
   CreditCard,
   Layout,
   ShoppingBag,
-  Play,
 } from 'lucide-react';
 import { GithubIcon } from '../components/common/SocialIcons';
 import { useGetProjectBySlugQuery } from '../features/projects/projectsApiSlice';

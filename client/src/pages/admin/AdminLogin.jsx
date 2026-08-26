@@ -1,12 +1,20 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { useSelector } from 'react-redux';
-import { ShieldCheck, Lock, Mail, AlertCircle, ArrowLeft, ArrowRight } from 'lucide-react';
+import {
+  Lock,
+  Mail,
+  AlertCircle,
+  ArrowLeft,
+  ArrowRight,
+  Eye,
+  EyeOff,
+} from 'lucide-react';
 import { selectIsAuthenticated } from '../../features/auth/authSlice';
 import { useLoginMutation, useGoogleLoginMutation } from '../../features/auth/authApiSlice';
 
-// Authentic Google Multicolored G Icon
-const GoogleIcon = ({ size = 20 }) => (
+// Authentic Google G Logo
+const GoogleIcon = ({ size = 18 }) => (
   <svg width={size} height={size} viewBox="0 0 24 24" className="shrink-0">
     <path
       fill="#4285F4"
@@ -30,7 +38,9 @@ const GoogleIcon = ({ size = 20 }) => (
 export const AdminLogin = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
+  const [isGsiRendered, setIsGsiRendered] = useState(false);
 
   const isAuthenticated = useSelector(selectIsAuthenticated);
   const [login, { isLoading: isEmailLoading }] = useLoginMutation();
@@ -93,11 +103,12 @@ export const AdminLogin = () => {
             window.google.accounts.id.renderButton(googleBtnContainerRef.current, {
               theme: 'filled_black',
               size: 'large',
-              width: '100%',
+              width: 360,
               text: 'continue_with',
-              shape: 'rectangular',
+              shape: 'pill',
               logo_alignment: 'left',
             });
+            setIsGsiRendered(true);
           }
         } catch (e) {
           console.warn('Google Identity initialization notice:', e);
@@ -122,7 +133,7 @@ export const AdminLogin = () => {
     if (window.google?.accounts?.id) {
       window.google.accounts.id.prompt();
     } else {
-      setErrorMessage('Google Identity is loading. Please click again in a moment.');
+      setErrorMessage('Google Identity Services is loading. Please try again in a moment.');
     }
   };
 
@@ -141,56 +152,64 @@ export const AdminLogin = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[#070A12] flex items-center justify-center p-4">
-      <div className="w-full max-w-md bg-slate-900/80 border border-slate-800 rounded-3xl p-8 shadow-2xl space-y-6 relative overflow-hidden">
-        {/* Glow */}
+    <div className="min-h-screen bg-[#070A12] flex items-center justify-center p-4 selection:bg-cyan-500 selection:text-white">
+      <div className="w-full max-w-md bg-[#0c1220]/90 border border-slate-800/90 rounded-3xl p-6 sm:p-8 shadow-2xl space-y-6 relative overflow-hidden">
+        {/* Ambient Glows */}
         <div className="absolute top-0 right-0 w-64 h-64 bg-cyan-600/10 rounded-full blur-3xl pointer-events-none -z-10" />
         <div className="absolute bottom-0 left-0 w-64 h-64 bg-blue-600/10 rounded-full blur-3xl pointer-events-none -z-10" />
 
-        {/* Header */}
-        <div className="text-center space-y-2">
-          <div className="w-12 h-12 rounded-2xl bg-blue-950 border border-blue-800/60 flex items-center justify-center text-cyan-400 mx-auto shadow-lg shadow-blue-600/20">
-            <ShieldCheck size={26} />
+        {/* Brand Header */}
+        <div className="text-center space-y-3">
+          <div className="inline-flex items-center justify-center text-2xl font-mono font-black tracking-tight mb-1">
+            <span className="text-cyan-400">&lt;</span>
+            <span className="text-white">BB</span>
+            <span className="text-cyan-400">&gt;</span>
           </div>
-          <h1 className="text-2xl font-extrabold text-white tracking-tight">
-            Admin Portal Authentication
-          </h1>
-          <p className="text-xs text-slate-400">
-            Sign in or connect with Google to manage portfolio projects, skills, profile, and comments.
-          </p>
+
+          <div className="space-y-1">
+            <h1 className="text-2xl font-extrabold text-white tracking-tight">
+              Admin Portal
+            </h1>
+            <p className="text-xs text-slate-400 max-w-xs mx-auto">
+              Sign in or authenticate with Google to access the administrator dashboard.
+            </p>
+          </div>
         </div>
 
         {/* Error Alert */}
         {errorMessage && (
-          <div className="p-3.5 bg-red-950/80 border border-red-800/80 text-red-300 text-xs font-medium rounded-xl flex items-center gap-2 animate-in fade-in">
-            <AlertCircle size={16} className="shrink-0" />
-            <span>{errorMessage}</span>
+          <div className="p-3.5 bg-red-950/80 border border-red-800/80 text-red-300 text-xs font-medium rounded-xl flex items-start gap-2.5 animate-in fade-in">
+            <AlertCircle size={16} className="shrink-0 mt-0.5" />
+            <span className="leading-relaxed">{errorMessage}</span>
           </div>
         )}
 
-        {/* 1. Google One-Click Login & Sign-Up */}
-        <div className="space-y-2.5">
+        {/* 1. Google OAuth Single Button Container */}
+        <div className="space-y-2">
+          {/* GIS Rendered Button */}
           <div
             ref={googleBtnContainerRef}
-            className="w-full min-h-[44px] flex items-center justify-center overflow-hidden rounded-xl bg-slate-950 border border-slate-800"
+            className={`w-full flex justify-center items-center ${isGsiRendered ? 'block' : 'hidden'}`}
           />
 
-          {/* Backup Custom Google Button */}
-          <button
-            type="button"
-            onClick={handleManualGoogleClick}
-            disabled={isLoading}
-            className="w-full py-2.5 px-4 bg-slate-950 hover:bg-slate-800/80 border border-slate-800 hover:border-slate-700 rounded-xl text-xs font-semibold text-slate-200 flex items-center justify-center gap-2.5 transition-all shadow-sm active:scale-[0.99] cursor-pointer disabled:opacity-50"
-          >
-            <GoogleIcon size={16} />
-            <span>{isGoogleLoading ? 'Connecting to Google...' : 'Sign in with Google Account'}</span>
-          </button>
+          {/* Fallback Custom Google Button (shown if GIS is not rendered yet) */}
+          {!isGsiRendered && (
+            <button
+              type="button"
+              onClick={handleManualGoogleClick}
+              disabled={isLoading}
+              className="w-full py-3 px-4 bg-[#11192b] hover:bg-[#16233d] border border-slate-700/80 hover:border-slate-600 rounded-xl text-xs sm:text-sm font-semibold text-slate-200 flex items-center justify-center gap-3 transition-all shadow-md active:scale-[0.99] cursor-pointer disabled:opacity-50"
+            >
+              <GoogleIcon size={18} />
+              <span>{isGoogleLoading ? 'Connecting to Google...' : 'Continue with Google'}</span>
+            </button>
+          )}
         </div>
 
         {/* Divider */}
         <div className="relative flex items-center justify-center">
           <div className="border-t border-slate-800 w-full" />
-          <span className="bg-slate-900 px-3 text-[11px] font-mono tracking-wider text-slate-500 uppercase shrink-0">
+          <span className="bg-[#0c1220] px-3 text-[10px] sm:text-[11px] font-mono tracking-wider text-slate-500 uppercase shrink-0">
             Or sign in with email
           </span>
           <div className="border-t border-slate-800 w-full" />
@@ -213,7 +232,7 @@ export const AdminLogin = () => {
                 placeholder="bishalbiswas2026@gmail.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="w-full pl-10 pr-4 py-2.5 bg-slate-950/90 border border-slate-800 rounded-xl text-sm text-slate-100 placeholder-slate-600 focus:outline-none focus:border-cyan-500 transition-colors"
+                className="w-full pl-10 pr-4 py-2.5 bg-slate-950/80 border border-slate-800 rounded-xl text-xs sm:text-sm text-slate-100 placeholder-slate-600 focus:outline-none focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400/40 transition-colors"
               />
             </div>
           </div>
@@ -228,33 +247,42 @@ export const AdminLogin = () => {
                 className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500"
               />
               <input
-                type="password"
+                type={showPassword ? 'text' : 'password'}
                 required
                 placeholder="••••••••"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="w-full pl-10 pr-4 py-2.5 bg-slate-950/90 border border-slate-800 rounded-xl text-sm text-slate-100 placeholder-slate-600 focus:outline-none focus:border-cyan-500 transition-colors"
+                className="w-full pl-10 pr-10 py-2.5 bg-slate-950/80 border border-slate-800 rounded-xl text-xs sm:text-sm text-slate-100 placeholder-slate-600 focus:outline-none focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400/40 transition-colors"
               />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300 transition-colors focus:outline-none"
+                title={showPassword ? 'Hide password' : 'Show password'}
+              >
+                {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+              </button>
             </div>
           </div>
 
           <button
             type="submit"
             disabled={isLoading}
-            className="w-full py-3 px-4 rounded-xl bg-blue-600 hover:bg-blue-500 disabled:bg-blue-800 text-white font-semibold text-sm flex items-center justify-center gap-2 shadow-lg shadow-blue-600/30 transition-all hover:scale-[1.02] active:scale-[0.98] cursor-pointer disabled:cursor-not-allowed"
+            className="w-full py-3 px-4 rounded-xl bg-blue-600 hover:bg-blue-500 disabled:bg-blue-800 text-white font-bold text-xs sm:text-sm flex items-center justify-center gap-2 shadow-lg shadow-blue-600/30 transition-all hover:scale-[1.01] active:scale-[0.99] cursor-pointer disabled:cursor-not-allowed"
           >
-            <span>{isEmailLoading ? 'Authenticating...' : 'Sign In with Password'}</span>
+            <span>{isEmailLoading ? 'Authenticating...' : 'Sign In as Admin'}</span>
             <ArrowRight size={16} />
           </button>
         </form>
 
+        {/* Back Link */}
         <div className="pt-2 text-center">
           <Link
             to="/"
             className="inline-flex items-center gap-1.5 text-xs text-slate-500 hover:text-cyan-400 transition-colors"
           >
-            <ArrowLeft size={12} />
-            <span>Return to public website</span>
+            <ArrowLeft size={13} />
+            <span>Return to public portfolio</span>
           </Link>
         </div>
       </div>
