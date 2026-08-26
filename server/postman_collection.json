@@ -1,0 +1,628 @@
+{
+  "info": {
+    "_postman_id": "8f5a6b7c-1234-4567-89ab-cdef01234567",
+    "name": "Bishal Biswas Developer Portfolio API",
+    "description": "Comprehensive Postman collection for testing all endpoints of the MERN Developer Portfolio Backend API, including Auth, Profile, Skills, Projects, and Comments moderation.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "1. Health & Server Info",
+      "item": [
+        {
+          "name": "Base API Info",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}",
+              "host": ["{{baseUrl}}"]
+            },
+            "description": "Returns basic API information and status."
+          },
+          "response": []
+        },
+        {
+          "name": "Health Check",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/health",
+              "host": ["{{baseUrl}}"],
+              "path": ["health"]
+            },
+            "description": "Returns MongoDB database connection state and uptime."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "2. Authentication & Admin Security",
+      "item": [
+        {
+          "name": "Admin Login",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const responseJson = pm.response.json();",
+                  "if (responseJson.success && responseJson.data && responseJson.data.accessToken) {",
+                  "    pm.environment.set('accessToken', responseJson.data.accessToken);",
+                  "    console.log('Access token saved to environment successfully.');",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{adminEmail}}\",\n  \"password\": \"{{adminPassword}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/login",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "login"]
+            },
+            "description": "Authenticates the admin and automatically saves the returned accessToken to the Postman environment."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Current Admin (/auth/me)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/auth/me",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "me"]
+            },
+            "description": "Returns current logged in admin identity details."
+          },
+          "response": []
+        },
+        {
+          "name": "Refresh Access Token",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/auth/refresh",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "refresh"]
+            },
+            "description": "Exchanges valid HttpOnly refresh cookie for a new access token."
+          },
+          "response": []
+        },
+        {
+          "name": "Admin Logout",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/auth/logout",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "logout"]
+            },
+            "description": "Revokes the active refresh session and clears cookie."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "3. Profile & About",
+      "item": [
+        {
+          "name": "Get Profile (Public)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/profile",
+              "host": ["{{baseUrl}}"],
+              "path": ["profile"]
+            },
+            "description": "Fetches hero details, bio paragraphs, and social links."
+          },
+          "response": []
+        },
+        {
+          "name": "Update Profile (Protected)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Bishal Biswas\",\n  \"title\": \"Full-Stack MERN & C Developer\",\n  \"tagline\": \"Crafting Robust Web Solutions with Core Logic Passion\",\n  \"aboutText\": \"Passionate Full-Stack Developer specializing in MERN stack and low-level systems programming in C. Building high-performance, scalable web apps and intuitive user interfaces.\",\n  \"photoUrl\": \"https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=600&q=80\",\n  \"aboutPhotoUrl\": \"https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=600&q=80\",\n  \"resumeUrl\": \"https://example.com/resume.pdf\",\n  \"socialLinks\": {\n    \"github\": \"https://github.com\",\n    \"linkedin\": \"https://linkedin.com\",\n    \"email\": \"bishalbiswas2026@gmail.com\"\n  }\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/profile",
+              "host": ["{{baseUrl}}"],
+              "path": ["profile"]
+            },
+            "description": "Updates portfolio identity, hero text, and social URLs."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "4. Skills",
+      "item": [
+        {
+          "name": "Get Visible Skills (Public)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/skills",
+              "host": ["{{baseUrl}}"],
+              "path": ["skills"]
+            },
+            "description": "Returns all visible skills sorted by display order."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Skills Filtered by Category (Public)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/skills?category=Frontend",
+              "host": ["{{baseUrl}}"],
+              "path": ["skills"],
+              "query": [
+                {
+                  "key": "category",
+                  "value": "Frontend"
+                }
+              ]
+            },
+            "description": "Filters visible skills by category (e.g. Frontend, Backend, Database, Language, Tools)."
+          },
+          "response": []
+        },
+        {
+          "name": "Get All Skills Admin (Protected)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/skills/admin",
+              "host": ["{{baseUrl}}"],
+              "path": ["skills", "admin"]
+            },
+            "description": "Returns all skills including hidden ones."
+          },
+          "response": []
+        },
+        {
+          "name": "Create Skill (Protected)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const res = pm.response.json();",
+                  "if (res.success && res.data && res.data._id) {",
+                  "    pm.environment.set('skillId', res.data._id);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"TypeScript\",\n  \"icon\": \"typescript\",\n  \"proficiency\": 85,\n  \"category\": \"Frontend\",\n  \"order\": 11,\n  \"isVisible\": true\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/skills",
+              "host": ["{{baseUrl}}"],
+              "path": ["skills"]
+            },
+            "description": "Creates a new skill."
+          },
+          "response": []
+        },
+        {
+          "name": "Update Skill (Protected)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"proficiency\": 90,\n  \"order\": 10\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/skills/{{skillId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["skills", "{{skillId}}"]
+            },
+            "description": "Updates skill proficiency, order, or name."
+          },
+          "response": []
+        },
+        {
+          "name": "Reorder Skills Batch (Protected)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"items\": [\n    { \"id\": \"{{skillId}}\", \"order\": 1 }\n  ]\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/skills/reorder",
+              "host": ["{{baseUrl}}"],
+              "path": ["skills", "reorder"]
+            },
+            "description": "Batch updates display orders for skills."
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Skill (Protected)",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/skills/{{skillId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["skills", "{{skillId}}"]
+            },
+            "description": "Deletes a skill by its ID."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "5. Projects",
+      "item": [
+        {
+          "name": "Get Published Projects (Public)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/projects",
+              "host": ["{{baseUrl}}"],
+              "path": ["projects"]
+            },
+            "description": "Returns all published projects."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Featured Projects (Public)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/projects?featured=true",
+              "host": ["{{baseUrl}}"],
+              "path": ["projects"],
+              "query": [
+                {
+                  "key": "featured",
+                  "value": "true"
+                }
+              ]
+            },
+            "description": "Returns featured projects shown on Homepage."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Single Project by Slug (Public)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/projects/mern-e-commerce-store",
+              "host": ["{{baseUrl}}"],
+              "path": ["projects", "mern-e-commerce-store"]
+            },
+            "description": "Returns complete project specifications, architecture details, and approved comments."
+          },
+          "response": []
+        },
+        {
+          "name": "Get All Projects Admin (Protected)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/projects/admin/all",
+              "host": ["{{baseUrl}}"],
+              "path": ["projects", "admin", "all"]
+            },
+            "description": "Returns all projects including drafts and unpublished works."
+          },
+          "response": []
+        },
+        {
+          "name": "Create Project (Protected)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const res = pm.response.json();",
+                  "if (res.success && res.data) {",
+                  "    if (res.data._id) pm.environment.set('projectId', res.data._id);",
+                  "    if (res.data.slug) pm.environment.set('projectSlug', res.data.slug);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Cloud Microservices Architecture\",\n  \"slug\": \"cloud-microservices-architecture\",\n  \"shortDescription\": \"Scalable distributed microservices system with API Gateway, Redis caching, and Kafka events.\",\n  \"fullDescription\": \"A high-throughput distributed system built with Node.js, Express, Kafka messaging, and Redis caching. Demonstrates asynchronous event-driven architecture, rate limiting, and zero-downtime deployment pipelines.\",\n  \"coverImageUrl\": \"https://images.unsplash.com/photo-1451187580459-43490279c0fa?auto=format&fit=crop&w=1200&q=80\",\n  \"demoVideoUrl\": \"https://www.youtube.com/embed/dQw4w9WgXcQ\",\n  \"role\": \"Lead Backend Architect\",\n  \"duration\": \"2.5 Months\",\n  \"liveSiteUrl\": \"https://demo-microservices.example.com\",\n  \"githubRepoUrl\": \"https://github.com/example/cloud-microservices\",\n  \"techStack\": [\"Node.js\", \"Express\", \"Kafka\", \"Redis\", \"Docker\", \"MongoDB\"],\n  \"features\": [\n    {\n      \"icon\": \"cpu\",\n      \"title\": \"Event-Driven Ingestion\",\n      \"description\": \"Kafka event streams processing 10,000+ operations/sec.\"\n    },\n    {\n      \"icon\": \"shield-check\",\n      \"title\": \"API Gateway Security\",\n      \"description\": \"JWT authentication with Redis token revocation blacklists.\"\n    }\n  ],\n  \"order\": 5,\n  \"isFeatured\": true,\n  \"isPublished\": true\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/projects",
+              "host": ["{{baseUrl}}"],
+              "path": ["projects"]
+            },
+            "description": "Creates a new showcase project."
+          },
+          "response": []
+        },
+        {
+          "name": "Update Project (Protected)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"shortDescription\": \"Updated: High-throughput distributed microservices with Kafka and Redis.\",\n  \"isFeatured\": true\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/projects/{{projectId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["projects", "{{projectId}}"]
+            },
+            "description": "Updates project details by ID."
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Project (Protected)",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/projects/{{projectId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["projects", "{{projectId}}"]
+            },
+            "description": "Deletes project and removes all its associated comments."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "6. Comments & Moderation",
+      "item": [
+        {
+          "name": "Get Comments for Project (Public)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/projects/mern-e-commerce-store/comments",
+              "host": ["{{baseUrl}}"],
+              "path": ["projects", "mern-e-commerce-store", "comments"]
+            },
+            "description": "Fetches all approved public comments for a project."
+          },
+          "response": []
+        },
+        {
+          "name": "Post Visitor Comment (Public, Rate-Limited)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const res = pm.response.json();",
+                  "if (res.success && res.data && res.data._id) {",
+                  "    pm.environment.set('commentId', res.data._id);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Michael Scott\",\n  \"role\": \"Engineering Manager\",\n  \"text\": \"Fantastic implementation! The UI and architectural robustness are top notch.\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/projects/mern-e-commerce-store/comments",
+              "host": ["{{baseUrl}}"],
+              "path": ["projects", "mern-e-commerce-store", "comments"]
+            },
+            "description": "Posts a public comment on a project."
+          },
+          "response": []
+        },
+        {
+          "name": "Get All Comments for Moderation (Protected)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/comments/admin",
+              "host": ["{{baseUrl}}"],
+              "path": ["comments", "admin"]
+            },
+            "description": "Fetches all comments across all projects with approval status for admin moderation."
+          },
+          "response": []
+        },
+        {
+          "name": "Toggle Comment Approval (Protected)",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/comments/{{commentId}}/approve",
+              "host": ["{{baseUrl}}"],
+              "path": ["comments", "{{commentId}}", "approve"]
+            },
+            "description": "Toggles comment visibility between approved and hidden."
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Comment (Protected)",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/comments/{{commentId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["comments", "{{commentId}}"]
+            },
+            "description": "Permanently deletes an inappropriate or spam comment."
+          },
+          "response": []
+        }
+      ]
+    }
+  ]
+}
