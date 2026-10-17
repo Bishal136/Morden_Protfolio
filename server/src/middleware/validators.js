@@ -109,10 +109,20 @@ const projectValidator = [
     .trim()
     .matches(/^[a-z0-9]+(?:-[a-z0-9]+)*$/)
     .withMessage('Slug must consist of lowercase alphanumeric characters and hyphens only'),
+  body('coverImageUrl').optional().trim(),
+  body('demoVideoUrl').optional().trim(),
   body('techStack')
     .optional()
     .isArray()
     .withMessage('Tech stack must be an array of strings'),
+  body('images')
+    .optional()
+    .isArray()
+    .withMessage('Images must be an array of image URLs'),
+  body('videos')
+    .optional()
+    .isArray()
+    .withMessage('Videos must be an array of video URLs'),
   body('features')
     .optional()
     .isArray()
@@ -131,10 +141,20 @@ const projectUpdateValidator = [
     .trim()
     .matches(/^[a-z0-9]+(?:-[a-z0-9]+)*$/)
     .withMessage('Slug must consist of lowercase alphanumeric characters and hyphens only'),
+  body('coverImageUrl').optional().trim(),
+  body('demoVideoUrl').optional().trim(),
   body('techStack')
     .optional()
     .isArray()
     .withMessage('Tech stack must be an array of strings'),
+  body('images')
+    .optional()
+    .isArray()
+    .withMessage('Images must be an array of image URLs'),
+  body('videos')
+    .optional()
+    .isArray()
+    .withMessage('Videos must be an array of video URLs'),
   body('features')
     .optional()
     .isArray()
@@ -164,6 +184,36 @@ const commentValidator = [
     .withMessage('Comment cannot exceed 1000 characters'),
 ];
 
+/**
+ * Validator schema for Contact Message Creation
+ */
+const messageValidator = [
+  body('name')
+    .trim()
+    .notEmpty()
+    .withMessage('Name is required')
+    .isLength({ max: 100 })
+    .withMessage('Name cannot exceed 100 characters'),
+  body('email')
+    .trim()
+    .notEmpty()
+    .withMessage('Email is required')
+    .isEmail()
+    .withMessage('Please provide a valid email address')
+    .normalizeEmail(),
+  body('subject')
+    .optional({ checkFalsy: true })
+    .trim()
+    .isLength({ max: 200 })
+    .withMessage('Subject cannot exceed 200 characters'),
+  body('message')
+    .trim()
+    .notEmpty()
+    .withMessage('Message is required')
+    .isLength({ min: 10, max: 3000 })
+    .withMessage('Message must be between 10 and 3000 characters'),
+];
+
 module.exports = {
   validate,
   loginValidator,
@@ -173,4 +223,5 @@ module.exports = {
   projectValidator,
   projectUpdateValidator,
   commentValidator,
+  messageValidator,
 };

@@ -1,0 +1,20 @@
+{
+  "name": "mordern-protfolio",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Developer Portfolio (MERN Stack: React 19, Express 5, MongoDB, Tailwind CSS v4)",
+  "scripts": {
+    "dev": "concurrently -n \"server,client\" -c \"blue,green\" \"npm --prefix server run dev\" \"npm --prefix client run dev\"",
+    "dev:server": "npm --prefix server run dev",
+    "dev:client": "npm --prefix client run dev",
+    "seed": "npm --prefix server run seed",
+    "seed:admin": "npm --prefix server run seed:admin",
+    "test:server": "npm --prefix server test",
+    "lint": "npm --prefix client run lint",
+    "build": "npm --prefix client run build",
+    "test": "npm run test:server && npm run lint && npm run build"
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.2"
+  }
+}

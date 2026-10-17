@@ -11,6 +11,7 @@ import {
 } from 'lucide-react';
 import {
   useUploadImageMutation,
+  useUploadImagesMutation,
   useUploadVideoMutation,
 } from '../../features/upload/uploadApiSlice';
 import { VideoPlayer } from './VideoPlayer';
@@ -20,6 +21,8 @@ export const MediaUploadField = ({
   label,
   value = '',
   onChange,
+  onMultipleUpload,
+  multiple = false,
   placeholderUrl = '',
   helpText = '',
   required = false,
@@ -32,9 +35,10 @@ export const MediaUploadField = ({
   const [uploadError, setUploadError] = useState('');
   const fileInputRef = useRef(null);
 
-  const [uploadImage, { isLoading: isUploadingImage }] = useUploadImageMutation();
+  const [uploadImage, { isLoading: isUploadingSingleImage }] = useUploadImageMutation();
+  const [uploadImages, { isLoading: isUploadingBatchImages }] = useUploadImagesMutation();
   const [uploadVideo, { isLoading: isUploadingVideo }] = useUploadVideoMutation();
-  const isUploading = isUploadingImage || isUploadingVideo;
+  const isUploading = isUploadingSingleImage || isUploadingBatchImages || isUploadingVideo;
 
   const handleDrag = (e) => {
     e.preventDefault();
@@ -46,10 +50,48 @@ export const MediaUploadField = ({
     }
   };
 
-  const processFile = async (file) => {
-    if (!file) return;
+  const processFiles = async (fileList) => {
+    if (!fileList || fileList.length === 0) return;
     setUploadError('');
 
+    const files = Array.from(fileList);
+
+    // If multiple files dropped/selected and onMultipleUpload is provided
+    if (multiple && onMultipleUpload && files.length > 1 && isImage) {
+      const invalidImage = files.find((f) => !f.type.startsWith('image/'));
+      if (invalidImage) {
+        setUploadError('All selected files must be valid images (JPG, PNG, WEBP, GIF, SVG).');
+        return;
+      }
+      const oversized = files.find((f) => f.size > 15 * 1024 * 1024);
+      if (oversized) {
+        setUploadError('One or more images exceed the 15MB limit.');
+        return;
+      }
+
+      const formData = new FormData();
+      files.forEach((file) => {
+        formData.append('images', file);
+      });
+
+      try {
+        const res = await uploadImages(formData).unwrap();
+        const urls = Array.isArray(res?.data)
+          ? res.data.map((item) => item.url).filter(Boolean)
+          : [];
+        if (urls.length > 0) {
+          onMultipleUpload(urls);
+        }
+      } catch (err) {
+        setUploadError(
+          err?.data?.message || err?.message || 'Failed to upload batch images.'
+        );
+      }
+      return;
+    }
+
+    // Single file processing
+    const file = files[0];
     const isVideoFile = file.type.startsWith('video/');
     const isImageFile = file.type.startsWith('image/');
 
@@ -79,13 +121,17 @@ export const MediaUploadField = ({
         formData.append('image', file);
         const res = await uploadImage(formData).unwrap();
         if (res?.data?.url) {
-          onChange(res.data.url);
+          if (multiple && onMultipleUpload) {
+            onMultipleUpload([res.data.url]);
+          } else if (onChange) {
+            onChange(res.data.url);
+          }
         }
       } else {
         formData.append('video', file);
         const res = await uploadVideo(formData).unwrap();
         if (res?.data?.url) {
-          onChange(res.data.url);
+          if (onChange) onChange(res.data.url);
         }
       }
     } catch (err) {
@@ -99,14 +145,16 @@ export const MediaUploadField = ({
     e.preventDefault();
     e.stopPropagation();
     setDragActive(false);
-    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
-      processFile(e.dataTransfer.files[0]);
+    if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+      processFiles(e.dataTransfer.files);
     }
   };
 
   const handleFileChange = (e) => {
-    if (e.target.files && e.target.files[0]) {
-      processFile(e.target.files[0]);
+    if (e.target.files && e.target.files.length > 0) {
+      processFiles(e.target.files);
+      // Reset input value so same files can be re-selected if needed
+      e.target.value = '';
     }
   };
 
@@ -167,6 +215,7 @@ export const MediaUploadField = ({
           <input
             ref={fileInputRef}
             type="file"
+            multiple={multiple}
             accept={
               isImage
                 ? 'image/jpeg,image/png,image/webp,image/gif,image/svg+xml'
@@ -199,13 +248,17 @@ export const MediaUploadField = ({
                 </div>
                 <div className="text-xs text-slate-300">
                   <span className="font-bold text-blue-400 hover:underline">
-                    {isUploading ? `Uploading ${type}...` : 'Click to upload'}
+                    {isUploading
+                      ? `Uploading ${multiple ? 'images' : type}...`
+                      : multiple
+                      ? 'Click to select multiple images'
+                      : 'Click to upload'}
                   </span>{' '}
                   or drag & drop
                 </div>
                 <p className="text-[11px] text-slate-500 font-mono">
                   {isImage
-                    ? 'JPG, PNG, WEBP, GIF, SVG (Max 15MB)'
+                    ? `JPG, PNG, WEBP, GIF, SVG (Max 15MB each${multiple ? ', multiple allowed' : ''})`
                     : 'MP4, WebM, OGG, MOV (Max 100MB)'}
                 </p>
               </div>

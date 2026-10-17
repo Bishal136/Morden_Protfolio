@@ -1,5 +1,6 @@
 const Project = require('../models/Project');
 const Comment = require('../models/Comment');
+const { normalizeTag, normalizeTags } = require('../utils/tagNormalizer');
 
 // Helper to generate url-friendly slug
 const slugify = (text) => {
@@ -14,6 +15,20 @@ const slugify = (text) => {
     .replace(/-+$/, ''); // Trim - from end of text
 };
 
+// Helper to format project documents with normalized tags and guaranteed media arrays
+const formatProjectDoc = (projectDoc) => {
+  if (!projectDoc) return null;
+  const doc = typeof projectDoc.toObject === 'function' ? projectDoc.toObject() : { ...projectDoc };
+  doc.techStack = normalizeTags(doc.techStack);
+  if (!Array.isArray(doc.images) || doc.images.length === 0) {
+    doc.images = doc.coverImageUrl ? [doc.coverImageUrl] : [];
+  }
+  if (!Array.isArray(doc.videos) || doc.videos.length === 0) {
+    doc.videos = doc.demoVideoUrl ? [doc.demoVideoUrl] : [];
+  }
+  return doc;
+};
+
 /**
  * @desc    Get all published projects
  * @route   GET /api/projects
@@ -25,7 +40,8 @@ const getProjects = async (req, res, next) => {
     const query = { isPublished: true };
 
     if (tag && tag !== 'All') {
-      const escapedTag = tag.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      const canonicalTag = normalizeTag(tag);
+      const escapedTag = canonicalTag.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
       query.techStack = { $regex: new RegExp(escapedTag, 'i') };
     }
 
@@ -34,11 +50,12 @@ const getProjects = async (req, res, next) => {
     }
 
     const projects = await Project.find(query).sort({ createdAt: -1 });
+    const formattedProjects = projects.map(formatProjectDoc);
 
     res.status(200).json({
       success: true,
-      count: projects.length,
-      data: projects,
+      count: formattedProjects.length,
+      data: formattedProjects,
     });
   } catch (error) {
     next(error);
@@ -53,11 +70,12 @@ const getProjects = async (req, res, next) => {
 const getAllProjectsAdmin = async (req, res, next) => {
   try {
     const projects = await Project.find().sort({ createdAt: -1 });
+    const formattedProjects = projects.map(formatProjectDoc);
 
     res.status(200).json({
       success: true,
-      count: projects.length,
-      data: projects,
+      count: formattedProjects.length,
+      data: formattedProjects,
     });
   } catch (error) {
     next(error);
@@ -88,10 +106,12 @@ const getProjectBySlug = async (req, res, next) => {
       approved: true,
     }).sort({ createdAt: -1 });
 
+    const projectObj = formatProjectDoc(project);
+
     res.status(200).json({
       success: true,
       data: {
-        ...project.toObject(),
+        ...projectObj,
         comments,
       },
     });
@@ -118,9 +138,11 @@ const getProjectById = async (req, res, next) => {
       });
     }
 
+    const projectObj = formatProjectDoc(project);
+
     res.status(200).json({
       success: true,
-      data: project,
+      data: projectObj,
     });
   } catch (error) {
     next(error);
@@ -140,7 +162,9 @@ const createProject = async (req, res, next) => {
       shortDescription,
       fullDescription,
       coverImageUrl,
+      images,
       demoVideoUrl,
+      videos,
       role,
       duration,
       liveSiteUrl,
@@ -171,28 +195,60 @@ const createProject = async (req, res, next) => {
       order = highestProject ? highestProject.order + 1 : 0;
     }
 
+    // Process multiple images
+    let processedImages = Array.isArray(images)
+      ? images.map((img) => (typeof img === 'string' ? img.trim() : '')).filter(Boolean)
+      : [];
+
+    if (coverImageUrl && coverImageUrl.trim()) {
+      coverImageUrl = coverImageUrl.trim();
+      if (!processedImages.includes(coverImageUrl)) {
+        processedImages = [coverImageUrl, ...processedImages];
+      }
+    } else if (processedImages.length > 0) {
+      coverImageUrl = processedImages[0];
+    }
+
+    // Process multiple videos
+    let processedVideos = Array.isArray(videos)
+      ? videos.map((v) => (typeof v === 'string' ? v.trim() : '')).filter(Boolean)
+      : [];
+
+    if (demoVideoUrl && demoVideoUrl.trim()) {
+      demoVideoUrl = demoVideoUrl.trim();
+      if (!processedVideos.includes(demoVideoUrl)) {
+        processedVideos = [demoVideoUrl, ...processedVideos];
+      }
+    } else if (processedVideos.length > 0) {
+      demoVideoUrl = processedVideos[0];
+    }
+
     const project = await Project.create({
       title,
       slug,
       shortDescription,
       fullDescription,
       coverImageUrl: coverImageUrl || '',
+      images: processedImages,
       demoVideoUrl: demoVideoUrl || '',
+      videos: processedVideos,
       role: role || 'Full-Stack Developer',
       duration: duration || '',
       liveSiteUrl: liveSiteUrl || '',
       githubRepoUrl: githubRepoUrl || '',
-      techStack: Array.isArray(techStack) ? techStack : [],
+      techStack: normalizeTags(techStack),
       features: Array.isArray(features) ? features : [],
       order,
       isFeatured: isFeatured !== undefined ? isFeatured : false,
       isPublished: isPublished !== undefined ? isPublished : true,
     });
 
+    const projectObj = formatProjectDoc(project);
+
     res.status(201).json({
       success: true,
       message: 'Project created successfully',
-      data: project,
+      data: projectObj,
     });
   } catch (error) {
     next(error);
@@ -222,6 +278,44 @@ const updateProject = async (req, res, next) => {
       }
     }
 
+    if (req.body.techStack) {
+      req.body.techStack = normalizeTags(req.body.techStack);
+    }
+
+    // Process multiple images if passed
+    if (req.body.images !== undefined) {
+      let processedImages = Array.isArray(req.body.images)
+        ? req.body.images.map((img) => (typeof img === 'string' ? img.trim() : '')).filter(Boolean)
+        : [];
+
+      if (req.body.coverImageUrl && req.body.coverImageUrl.trim()) {
+        req.body.coverImageUrl = req.body.coverImageUrl.trim();
+        if (!processedImages.includes(req.body.coverImageUrl)) {
+          processedImages = [req.body.coverImageUrl, ...processedImages];
+        }
+      } else if (processedImages.length > 0 && !req.body.coverImageUrl) {
+        req.body.coverImageUrl = processedImages[0];
+      }
+      req.body.images = processedImages;
+    }
+
+    // Process multiple videos if passed
+    if (req.body.videos !== undefined) {
+      let processedVideos = Array.isArray(req.body.videos)
+        ? req.body.videos.map((v) => (typeof v === 'string' ? v.trim() : '')).filter(Boolean)
+        : [];
+
+      if (req.body.demoVideoUrl && req.body.demoVideoUrl.trim()) {
+        req.body.demoVideoUrl = req.body.demoVideoUrl.trim();
+        if (!processedVideos.includes(req.body.demoVideoUrl)) {
+          processedVideos = [req.body.demoVideoUrl, ...processedVideos];
+        }
+      } else if (processedVideos.length > 0 && !req.body.demoVideoUrl) {
+        req.body.demoVideoUrl = processedVideos[0];
+      }
+      req.body.videos = processedVideos;
+    }
+
     const project = await Project.findByIdAndUpdate(id, req.body, {
       new: true,
       runValidators: true,
@@ -234,10 +328,12 @@ const updateProject = async (req, res, next) => {
       });
     }
 
+    const projectObj = formatProjectDoc(project);
+
     res.status(200).json({
       success: true,
       message: 'Project updated successfully',
-      data: project,
+      data: projectObj,
     });
   } catch (error) {
     next(error);

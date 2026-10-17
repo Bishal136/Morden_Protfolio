@@ -32,12 +32,18 @@ export const projectsApiSlice = apiSlice.injectEndpoints({
     }),
     getProjectBySlug: builder.query({
       query: (slug) => `/projects/${slug}`,
-      providesTags: (result, error, slug) => [{ type: 'Project', id: slug }],
+      providesTags: (result, error, slug) => [
+        { type: 'Project', id: slug },
+        ...(result?._id ? [{ type: 'Project', id: result._id }] : []),
+      ],
       transformResponse: (response) => response.data,
     }),
     getProjectById: builder.query({
       query: (id) => `/projects/id/${id}`,
-      providesTags: (result, error, id) => [{ type: 'Project', id }],
+      providesTags: (result, error, id) => [
+        { type: 'Project', id },
+        ...(result?.slug ? [{ type: 'Project', id: result.slug }] : []),
+      ],
       transformResponse: (response) => response.data,
     }),
     createProject: builder.mutation({
@@ -57,18 +63,27 @@ export const projectsApiSlice = apiSlice.injectEndpoints({
         method: 'PUT',
         body: patch,
       }),
-      invalidatesTags: (result, error, { id }) => [
-        { type: 'Project', id },
-        { type: 'Project', id: 'LIST' },
-        { type: 'Project', id: 'ADMIN_LIST' },
-      ],
+      invalidatesTags: (result, error, { id, slug }) => {
+        const resultSlug = result?.slug || result?.data?.slug || slug;
+        const resultId = result?._id || result?.data?._id || id;
+        const tags = [
+          { type: 'Project', id: resultId },
+          { type: 'Project', id: 'LIST' },
+          { type: 'Project', id: 'ADMIN_LIST' },
+        ];
+        if (resultSlug) {
+          tags.push({ type: 'Project', id: resultSlug });
+        }
+        return tags;
+      },
     }),
     deleteProject: builder.mutation({
       query: (id) => ({
         url: `/projects/${id}`,
         method: 'DELETE',
       }),
-      invalidatesTags: [
+      invalidatesTags: (result, error, id) => [
+        { type: 'Project', id },
         { type: 'Project', id: 'LIST' },
         { type: 'Project', id: 'ADMIN_LIST' },
       ],

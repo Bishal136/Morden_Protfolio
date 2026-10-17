@@ -14,6 +14,7 @@ const profileRoutes = require('./routes/profileRoutes');
 const skillRoutes = require('./routes/skillRoutes');
 const projectRoutes = require('./routes/projectRoutes');
 const commentRoutes = require('./routes/commentRoutes');
+const messageRoutes = require('./routes/messageRoutes');
 const uploadRoutes = require('./routes/uploadRoutes');
 
 const app = express();
@@ -119,6 +120,7 @@ app.use('/api/profile', profileRoutes);
 app.use('/api/skills', skillRoutes);
 app.use('/api/projects', projectRoutes);
 app.use('/api/comments', commentRoutes);
+app.use('/api/messages', messageRoutes);
 app.use('/api/upload', uploadRoutes);
 
 // 404 Handler

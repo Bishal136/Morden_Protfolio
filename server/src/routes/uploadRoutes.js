@@ -74,7 +74,46 @@ const uploadVideo = multer({
 });
 
 /**
- * @desc    Upload Image (Cloudinary with Local Fallback)
+ * Helper to upload a single image buffer to Cloudinary or Local disk
+ */
+const saveImageBuffer = async (buffer, originalname, mimetype, size) => {
+  let fileUrl = '';
+  let publicId = null;
+  let storageProvider = 'local';
+
+  if (isCloudinaryConfigured()) {
+    const result = await uploadImageToCloudinary(
+      buffer,
+      'portfolio/projects',
+      originalname
+    );
+    fileUrl = result.secure_url;
+    publicId = result.public_id;
+    storageProvider = 'cloudinary';
+  } else {
+    const ext = path.extname(originalname).toLowerCase() || '.jpg';
+    const safeName = path
+      .basename(originalname, ext)
+      .replace(/[^a-zA-Z0-9_-]/g, '_')
+      .slice(0, 30);
+    const uniqueFilename = `img-${safeName}-${Date.now()}-${Math.round(Math.random() * 1e9)}${ext}`;
+    const localPath = path.join(imagesDir, uniqueFilename);
+    fs.writeFileSync(localPath, buffer);
+    fileUrl = `/uploads/images/${uniqueFilename}`;
+  }
+
+  return {
+    url: fileUrl,
+    publicId,
+    storage: storageProvider,
+    originalName: originalname,
+    size,
+    mimetype,
+  };
+};
+
+/**
+ * @desc    Upload Single Image (Cloudinary with Local Fallback)
  * @route   POST /api/upload/image
  * @access  Private / Admin
  */
@@ -104,49 +143,82 @@ router.post(
       }
 
       try {
-        let fileUrl = '';
-        let publicId = null;
-        let storageProvider = 'local';
-
-        if (isCloudinaryConfigured()) {
-          // Upload to Cloudinary
-          const result = await uploadImageToCloudinary(
-            req.file.buffer,
-            'portfolio/projects',
-            req.file.originalname
-          );
-          fileUrl = result.secure_url;
-          publicId = result.public_id;
-          storageProvider = 'cloudinary';
-        } else {
-          // Local fallback
-          const ext = path.extname(req.file.originalname).toLowerCase() || '.jpg';
-          const safeName = path
-            .basename(req.file.originalname, ext)
-            .replace(/[^a-zA-Z0-9_-]/g, '_')
-            .slice(0, 30);
-          const uniqueFilename = `img-${safeName}-${Date.now()}-${Math.round(Math.random() * 1e9)}${ext}`;
-          const localPath = path.join(imagesDir, uniqueFilename);
-          fs.writeFileSync(localPath, req.file.buffer);
-          fileUrl = `/uploads/images/${uniqueFilename}`;
-        }
+        const fileData = await saveImageBuffer(
+          req.file.buffer,
+          req.file.originalname,
+          req.file.mimetype,
+          req.file.size
+        );
 
         res.status(200).json({
           success: true,
-          message: `Image uploaded successfully (${storageProvider})`,
-          data: {
-            url: fileUrl,
-            publicId,
-            storage: storageProvider,
-            originalName: req.file.originalname,
-            size: req.file.size,
-            mimetype: req.file.mimetype,
-          },
+          message: `Image uploaded successfully (${fileData.storage})`,
+          data: fileData,
         });
       } catch (uploadErr) {
         return res.status(500).json({
           success: false,
           message: uploadErr.message || 'Failed to process image upload.',
+        });
+      }
+    });
+  }
+);
+
+/**
+ * @desc    Upload Multiple Images in Batch (Cloudinary with Local Fallback)
+ * @route   POST /api/upload/images
+ * @access  Private / Admin
+ */
+router.post(
+  '/images',
+  verifyAccessToken,
+  requireAdmin,
+  (req, res, next) => {
+    uploadImage.fields([
+      { name: 'images', maxCount: 15 },
+      { name: 'image', maxCount: 15 },
+    ])(req, res, async (err) => {
+      if (err instanceof multer.MulterError) {
+        if (err.code === 'LIMIT_FILE_SIZE') {
+          return res.status(400).json({
+            success: false,
+            message: `One or more files exceed the maximum image limit of ${MAX_IMAGE_SIZE_MB}MB.`,
+          });
+        }
+        return res.status(400).json({ success: false, message: err.message });
+      } else if (err) {
+        return res.status(400).json({ success: false, message: err.message });
+      }
+
+      const files = [
+        ...(req.files?.images || []),
+        ...(req.files?.image || []),
+      ];
+
+      if (!files || files.length === 0) {
+        return res.status(400).json({
+          success: false,
+          message: 'No image files provided in request (field: images).',
+        });
+      }
+
+      try {
+        const uploadPromises = files.map((file) =>
+          saveImageBuffer(file.buffer, file.originalname, file.mimetype, file.size)
+        );
+        const uploadedItems = await Promise.all(uploadPromises);
+
+        res.status(200).json({
+          success: true,
+          count: uploadedItems.length,
+          message: `${uploadedItems.length} images uploaded successfully.`,
+          data: uploadedItems,
+        });
+      } catch (uploadErr) {
+        return res.status(500).json({
+          success: false,
+          message: uploadErr.message || 'Failed to process batch image upload.',
         });
       }
     });

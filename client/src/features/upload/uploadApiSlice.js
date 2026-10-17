@@ -9,6 +9,13 @@ export const uploadApiSlice = apiSlice.injectEndpoints({
         body: formData,
       }),
     }),
+    uploadImages: builder.mutation({
+      query: (formData) => ({
+        url: '/upload/images',
+        method: 'POST',
+        body: formData,
+      }),
+    }),
     uploadVideo: builder.mutation({
       query: (formData) => ({
         url: '/upload/video',
@@ -19,4 +26,8 @@ export const uploadApiSlice = apiSlice.injectEndpoints({
   }),
 });
 
-export const { useUploadImageMutation, useUploadVideoMutation } = uploadApiSlice;
+export const {
+  useUploadImageMutation,
+  useUploadImagesMutation,
+  useUploadVideoMutation,
+} = uploadApiSlice;

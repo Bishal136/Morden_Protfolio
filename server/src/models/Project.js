@@ -47,9 +47,17 @@ const projectSchema = new mongoose.Schema(
       type: String,
       default: '',
     },
+    images: {
+      type: [String],
+      default: [],
+    },
     demoVideoUrl: {
       type: String,
       default: '',
+    },
+    videos: {
+      type: [String],
+      default: [],
     },
     role: {
       type: String,

@@ -675,6 +675,61 @@ export const ProjectDetails = () => {
         </div>
       </div>
 
+      {/* 2.5 SCREENSHOTS & UI GALLERY SECTION */}
+      {allImages.length > 0 && (
+        <div className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200 space-y-6 shadow-xs">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+            <div className="space-y-1">
+              <h2 className="text-base sm:text-lg font-bold text-slate-900 tracking-tight font-mono uppercase text-sky-600 flex items-center gap-2">
+                <ImageIcon size={18} className="text-sky-600" />
+                <span>Architecture & UI Screenshot Gallery</span>
+              </h2>
+              <p className="text-xs text-slate-500">
+                High-resolution interface screens, architectural diagrams, and user flows.
+              </p>
+            </div>
+            <span className="text-xs font-mono text-sky-700 bg-sky-50 px-2.5 py-1 rounded-full border border-sky-200 font-medium self-start sm:self-auto">
+              {allImages.length} {allImages.length === 1 ? 'Screenshot' : 'Screenshots'}
+            </span>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+            {allImages.map((imgUrl, idx) => (
+              <div
+                key={idx}
+                onClick={() => openLightboxAtImage(idx)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    openLightboxAtImage(idx);
+                  }
+                }}
+                tabIndex={0}
+                role="button"
+                className="group relative rounded-2xl overflow-hidden border border-slate-200 bg-slate-950 aspect-video cursor-pointer shadow-xs hover:shadow-md hover:border-sky-400/60 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-500"
+                aria-label={`View screenshot ${idx + 1} of ${allImages.length} in full resolution`}
+              >
+                <img
+                  src={imgUrl}
+                  alt={`${project.title} screenshot ${idx + 1}`}
+                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 ease-out"
+                  loading="lazy"
+                />
+                <div className="absolute inset-0 bg-slate-950/20 group-hover:bg-slate-950/40 transition-colors flex items-center justify-center">
+                  <div className="px-3 py-1.5 rounded-xl bg-slate-900/90 border border-white/20 text-slate-100 flex items-center gap-1.5 text-xs font-mono font-semibold shadow-lg opacity-0 group-hover:opacity-100 group-hover:scale-105 transition-all">
+                    <ZoomIn size={13} className="text-sky-400" />
+                    <span>Inspect</span>
+                  </div>
+                </div>
+                <div className="absolute top-2.5 left-2.5 px-2 py-0.5 rounded-md bg-slate-950/70 backdrop-blur-md border border-white/10 text-white text-[10px] font-mono pointer-events-none">
+                  #{idx + 1}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* 3. BOTTOM SECTION: CLIENT & PEER COMMENTS */}
       <div className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200 space-y-6 shadow-xs">
         <div className="flex items-center justify-between">

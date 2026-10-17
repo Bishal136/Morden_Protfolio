@@ -30,7 +30,23 @@ const commentLimiter = rateLimit({
   },
 });
 
+/**
+ * Rate limiter for Public Contact Message submission
+ * Prevents inbox and database spam
+ */
+const messageLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000, // 1 hour
+  max: 10, // Limit each IP to 10 direct messages per hour
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: {
+    success: false,
+    message: 'Too many messages sent from this IP. Please try again after an hour.',
+  },
+});
+
 module.exports = {
   authLimiter,
   commentLimiter,
+  messageLimiter,
 };

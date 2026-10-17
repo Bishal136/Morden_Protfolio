@@ -70,18 +70,40 @@ export const ManageProjects = () => {
 
   const openEditModal = (project) => {
     setEditingProjectId(project._id);
-    const existingImages = Array.isArray(project.images) ? [...project.images] : [];
-    const existingVideos = Array.isArray(project.videos) ? [...project.videos] : [];
+
+    const coverImg = (project.coverImageUrl || '').trim();
+    const rawImages = Array.isArray(project.images)
+      ? project.images
+          .map((img) => (typeof img === 'string' ? img.trim() : ''))
+          .filter(Boolean)
+      : [];
+
+    // Additional screenshots should not duplicate the cover image
+    const additionalScreenshots = coverImg
+      ? rawImages.filter((img) => img !== coverImg)
+      : rawImages.slice(1);
+    const resolvedCoverImg = coverImg || rawImages[0] || '';
+
+    const demoVideo = (project.demoVideoUrl || '').trim();
+    const rawVideos = Array.isArray(project.videos)
+      ? project.videos
+          .map((v) => (typeof v === 'string' ? v.trim() : ''))
+          .filter(Boolean)
+      : [];
+    const additionalVideos = demoVideo
+      ? rawVideos.filter((v) => v !== demoVideo)
+      : rawVideos.slice(1);
+    const resolvedDemoVideo = demoVideo || rawVideos[0] || '';
 
     setFormData({
       title: project.title || '',
       slug: project.slug || '',
       shortDescription: project.shortDescription || '',
       fullDescription: project.fullDescription || '',
-      coverImageUrl: project.coverImageUrl || '',
-      images: existingImages,
-      demoVideoUrl: project.demoVideoUrl || '',
-      videos: existingVideos,
+      coverImageUrl: resolvedCoverImg,
+      images: additionalScreenshots,
+      demoVideoUrl: resolvedDemoVideo,
+      videos: additionalVideos,
       role: project.role || 'Full-Stack Developer',
       duration: project.duration || '',
       liveSiteUrl: project.liveSiteUrl || '',
@@ -129,6 +151,16 @@ export const ManageProjects = () => {
       ...prev,
       images: [...(prev.images || []), ''],
     }));
+  };
+
+  const handleMultipleScreenshotsUpload = (newUrls) => {
+    setFormData((prev) => {
+      const existing = (prev.images || []).filter(Boolean);
+      return {
+        ...prev,
+        images: [...existing, ...newUrls],
+      };
+    });
   };
 
   const handleScreenshotChange = (index, url) => {
@@ -580,19 +612,36 @@ export const ManageProjects = () => {
             />
 
             {/* Additional Screenshot Items */}
-            <div className="space-y-3 pl-3 border-l-2 border-slate-800">
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-semibold text-slate-300">
-                  Additional Screenshots ({formData.images?.length || 0})
-                </span>
+            <div className="space-y-4 pl-3 border-l-2 border-slate-800">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                <div>
+                  <span className="text-xs font-semibold text-slate-200">
+                    Additional Screenshots ({formData.images?.length || 0})
+                  </span>
+                  <p className="text-[11px] text-slate-400">
+                    Upload multiple screenshots at once, or manage individual slots.
+                  </p>
+                </div>
                 <button
                   type="button"
                   onClick={handleAddScreenshot}
-                  className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-sky-950/80 hover:bg-sky-900 border border-sky-800 text-sky-300 text-xs font-semibold transition-colors"
+                  className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-slate-900 hover:bg-slate-800 border border-slate-700 text-slate-300 text-xs font-semibold transition-colors self-start sm:self-auto"
                 >
                   <PlusCircle size={13} />
-                  <span>Add Screenshot</span>
+                  <span>+ Add Single Slot</span>
                 </button>
+              </div>
+
+              {/* Batch Multi-File Uploader */}
+              <div className="p-3 bg-slate-950/60 rounded-xl border border-dashed border-sky-800/60">
+                <MediaUploadField
+                  type="image"
+                  multiple={true}
+                  label="Upload Multiple Screenshots at Once (Batch Upload)"
+                  onMultipleUpload={handleMultipleScreenshotsUpload}
+                  placeholderUrl=""
+                  helpText="Select or drag & drop multiple screenshot files (JPG, PNG, WEBP, SVG). All images will be instantly uploaded and appended below."
+                />
               </div>
 
               {formData.images && formData.images.length > 0 ? (
