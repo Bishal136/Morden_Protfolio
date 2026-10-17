@@ -15,7 +15,7 @@ import {
   useDeleteSkillMutation,
 } from '../../features/skills/skillsApiSlice';
 import Modal from '../../components/common/Modal';
-import { getSkillIcon } from '../../components/common/SkillCard';
+import { getSkillIcon } from '../../utils/skillIcons';
 import { Skeleton } from '../../components/common/Skeleton';
 
 export const ManageSkills = () => {

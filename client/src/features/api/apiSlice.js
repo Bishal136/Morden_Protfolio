@@ -1,8 +1,11 @@
 import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
 import { setCredentials, logout } from '../auth/authSlice';
 
+const rawBaseUrl = (import.meta.env.VITE_API_BASE_URL || '/api').trim();
+const normalizedBaseUrl = rawBaseUrl.replace(/\/+$/, '') || '/api';
+
 const baseQuery = fetchBaseQuery({
-  baseUrl: import.meta.env.VITE_API_BASE_URL || '/api',
+  baseUrl: normalizedBaseUrl,
   credentials: 'include',
   prepareHeaders: (headers, { getState }) => {
     const token = getState().auth?.token || localStorage.getItem('token');
@@ -55,6 +58,6 @@ const baseQueryWithReauth = async (args, api, extraOptions) => {
 export const apiSlice = createApi({
   reducerPath: 'api',
   baseQuery: baseQueryWithReauth,
-  tagTypes: ['Profile', 'Skill', 'Project', 'Comment', 'Auth'],
+  tagTypes: ['Profile', 'Skill', 'Project', 'Comment', 'Auth', 'Message'],
   endpoints: () => ({}),
 });

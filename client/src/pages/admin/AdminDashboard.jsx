@@ -6,12 +6,14 @@ import {
   Cpu,
   User,
   MessageSquare,
+  Mail,
   ArrowUpRight,
 } from 'lucide-react';
 import { selectIsAuthenticated } from '../../features/auth/authSlice';
 import { useGetAllProjectsAdminQuery } from '../../features/projects/projectsApiSlice';
 import { useGetAllSkillsAdminQuery } from '../../features/skills/skillsApiSlice';
 import { useGetAllCommentsAdminQuery } from '../../features/comments/commentsApiSlice';
+import { useGetAllMessagesAdminQuery } from '../../features/messages/messagesApiSlice';
 import { useGetProfileQuery } from '../../features/profile/profileApiSlice';
 import { Skeleton } from '../../components/common/Skeleton';
 
@@ -26,7 +28,13 @@ export const AdminDashboard = () => {
   const { data: comments, isLoading: isCommentsLoading } = useGetAllCommentsAdminQuery(undefined, {
     skip: !isAuthenticated,
   });
+  const { data: messagesResponse, isLoading: isMessagesLoading } = useGetAllMessagesAdminQuery(undefined, {
+    skip: !isAuthenticated,
+  });
   const { data: profile } = useGetProfileQuery();
+
+  const messages = messagesResponse?.data || [];
+  const unreadMessagesCount = messagesResponse?.unreadCount ?? 0;
 
   const stats = [
     {
@@ -52,6 +60,15 @@ export const AdminDashboard = () => {
       link: '/admin/comments',
       color: 'text-purple-400',
       bg: 'bg-purple-950/60 border-purple-800/60',
+    },
+    {
+      title: 'Direct Inquiries',
+      value: messagesResponse?.totalCount ?? 0,
+      badge: unreadMessagesCount > 0 ? `${unreadMessagesCount} New` : null,
+      icon: Mail,
+      link: '/admin/messages',
+      color: 'text-sky-400',
+      bg: 'bg-sky-950/60 border-sky-800/60',
     },
     {
       title: 'Profile Status',
@@ -87,7 +104,7 @@ export const AdminDashboard = () => {
       </div>
 
       {/* Stats Cards Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
         {stats.map((stat, idx) => {
           const Icon = stat.icon;
           return (
@@ -97,9 +114,16 @@ export const AdminDashboard = () => {
               className="bg-slate-900/60 hover:bg-slate-900/90 border border-slate-800 hover:border-slate-700 rounded-2xl p-5 transition-all duration-200 group flex flex-col justify-between"
             >
               <div className="flex items-center justify-between">
-                <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">
-                  {stat.title}
-                </span>
+                <div className="flex items-center gap-1.5 flex-wrap">
+                  <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">
+                    {stat.title}
+                  </span>
+                  {stat.badge && (
+                    <span className="text-[10px] font-mono font-bold px-1.5 py-0.2 rounded-full bg-sky-500 text-slate-950">
+                      {stat.badge}
+                    </span>
+                  )}
+                </div>
                 <div className={`p-2 rounded-xl border ${stat.bg} ${stat.color}`}>
                   <Icon size={18} />
                 </div>
@@ -107,7 +131,7 @@ export const AdminDashboard = () => {
 
               <div className="mt-4 flex items-baseline justify-between">
                 <span className="text-2xl font-extrabold text-slate-100 font-mono">
-                  {isProjectsLoading || isSkillsLoading || isCommentsLoading ? (
+                  {isProjectsLoading || isSkillsLoading || isCommentsLoading || isMessagesLoading ? (
                     <Skeleton className="h-8 w-12" />
                   ) : (
                     stat.value
@@ -123,7 +147,7 @@ export const AdminDashboard = () => {
       </div>
 
       {/* Quick Action Panels */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Recent Projects List */}
         <div className="bg-slate-900/60 border border-slate-800 rounded-3xl p-6 space-y-4">
           <div className="flex items-center justify-between">
@@ -227,6 +251,60 @@ export const AdminDashboard = () => {
             ) : (
               <p className="text-xs text-slate-500 py-4 text-center">
                 No comments submitted yet.
+              </p>
+            )}
+          </div>
+        </div>
+
+        {/* Recent Direct Messages Inquiries */}
+        <div className="bg-slate-900/60 border border-slate-800 rounded-3xl p-6 space-y-4">
+          <div className="flex items-center justify-between">
+            <h2 className="text-base font-bold text-slate-200 flex items-center gap-2">
+              <Mail size={18} className="text-sky-400" />
+              <span>Direct Inquiries</span>
+            </h2>
+            <Link
+              to="/admin/messages"
+              className="text-xs font-semibold text-sky-400 hover:underline"
+            >
+              Inbox
+            </Link>
+          </div>
+
+          <div className="space-y-2.5">
+            {messages && messages.length > 0 ? (
+              messages.slice(0, 4).map((m) => (
+                <Link
+                  key={m._id}
+                  to="/admin/messages"
+                  className={`block p-3 rounded-xl border transition-colors ${
+                    !m.isRead
+                      ? 'bg-sky-950/30 border-sky-500/40 hover:bg-sky-950/50'
+                      : 'bg-slate-950/60 border-slate-800/80 hover:bg-slate-950'
+                  }`}
+                >
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-1.5">
+                      {!m.isRead && (
+                        <span className="w-2 h-2 rounded-full bg-sky-400 inline-block animate-pulse" />
+                      )}
+                      <span className="text-xs font-semibold text-slate-200">{m.name}</span>
+                    </div>
+                    <span className="text-[10px] font-mono text-slate-500">
+                      {new Date(m.createdAt).toLocaleDateString()}
+                    </span>
+                  </div>
+                  <p className="text-xs font-medium text-slate-300 mt-1 truncate">
+                    {m.subject || 'General Inquiry'}
+                  </p>
+                  <p className="text-[11px] text-slate-400 line-clamp-1 mt-0.5">
+                    {m.message}
+                  </p>
+                </Link>
+              ))
+            ) : (
+              <p className="text-xs text-slate-500 py-4 text-center">
+                No direct inquiries yet.
               </p>
             )}
           </div>

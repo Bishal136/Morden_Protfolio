@@ -75,7 +75,7 @@ export const AdminLogin = () => {
       } catch (err) {
         setErrorMessage(
           err?.data?.message ||
-            'Google authentication failed. Ensure this account is authorized as an administrator.'
+          'Google authentication failed. Ensure this account is authorized as an administrator.'
         );
       }
     },
@@ -152,7 +152,7 @@ export const AdminLogin = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[#070A12] flex items-center justify-center p-4 selection:bg-cyan-500 selection:text-white">
+    <div className="admin-theme dark [color-scheme:dark] min-h-screen bg-[#070A12] flex items-center justify-center p-4 selection:bg-cyan-500 selection:text-white">
       <div className="w-full max-w-md bg-[#0c1220]/90 border border-slate-800/90 rounded-3xl p-6 sm:p-8 shadow-2xl space-y-6 relative overflow-hidden">
         {/* Ambient Glows */}
         <div className="absolute top-0 right-0 w-64 h-64 bg-cyan-600/10 rounded-full blur-3xl pointer-events-none -z-10" />
@@ -184,27 +184,8 @@ export const AdminLogin = () => {
           </div>
         )}
 
-        {/* 1. Google OAuth Single Button Container */}
-        <div className="space-y-2">
-          {/* GIS Rendered Button */}
-          <div
-            ref={googleBtnContainerRef}
-            className={`w-full flex justify-center items-center ${isGsiRendered ? 'block' : 'hidden'}`}
-          />
 
-          {/* Fallback Custom Google Button (shown if GIS is not rendered yet) */}
-          {!isGsiRendered && (
-            <button
-              type="button"
-              onClick={handleManualGoogleClick}
-              disabled={isLoading}
-              className="w-full py-3 px-4 bg-[#11192b] hover:bg-[#16233d] border border-slate-700/80 hover:border-slate-600 rounded-xl text-xs sm:text-sm font-semibold text-slate-200 flex items-center justify-center gap-3 transition-all shadow-md active:scale-[0.99] cursor-pointer disabled:opacity-50"
-            >
-              <GoogleIcon size={18} />
-              <span>{isGoogleLoading ? 'Connecting to Google...' : 'Continue with Google'}</span>
-            </button>
-          )}
-        </div>
+
 
         {/* Divider */}
         <div className="relative flex items-center justify-center">
@@ -274,6 +255,28 @@ export const AdminLogin = () => {
             <ArrowRight size={16} />
           </button>
         </form>
+
+        {/* 1. Google OAuth Single Button Container */}
+        <div className="space-y-3">
+          {/* GIS Rendered Button */}
+          <div
+            ref={googleBtnContainerRef}
+            className={`w-full flex justify-center items-center ${isGsiRendered ? 'block' : 'hidden'}`}
+          />
+
+          {/* Fallback Custom Google Button (shown if GIS is not rendered yet) */}
+          {!isGsiRendered && (
+            <button
+              type="button"
+              onClick={handleManualGoogleClick}
+              disabled={isLoading}
+              className="w-full py-3 px-4 bg-[#11192b] hover:bg-[#16233d] border border-slate-700/80 hover:border-slate-600 rounded-xl text-xs sm:text-sm font-semibold text-slate-200 flex items-center justify-center gap-3 transition-all shadow-md active:scale-[0.99] cursor-pointer disabled:opacity-50"
+            >
+              <GoogleIcon size={18} />
+              <span>{isGoogleLoading ? 'Connecting to Google...' : 'Continue with Google'}</span>
+            </button>
+          )}
+        </div>
 
         {/* Back Link */}
         <div className="pt-2 text-center">

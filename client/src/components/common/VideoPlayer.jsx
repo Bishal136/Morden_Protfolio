@@ -1,62 +1,6 @@
 import React from 'react';
-import { Play } from 'lucide-react';
-
-/**
- * Parses and identifies the video type (YouTube, Vimeo, direct MP4/WebM/upload, or generic embed)
- */
-export const parseVideoUrl = (url) => {
-  if (!url || typeof url !== 'string') return { type: 'none', url: '' };
-
-  const trimmed = url.trim();
-
-  // 1. YouTube (watch?v=, youtu.be/, embed/, shorts/)
-  const youtubeMatch = trimmed.match(
-    /(?:youtube\.com\/(?:[^/]+\/.+\/|(?:v|e(?:mbed)?|shorts)\/|.*[?&]v=)|youtu\.be\/)([^"&?/\s]{11})/i
-  );
-  if (youtubeMatch && youtubeMatch[1]) {
-    return {
-      type: 'youtube',
-      url: `https://www.youtube.com/embed/${youtubeMatch[1]}?autoplay=0&rel=0`,
-      id: youtubeMatch[1],
-    };
-  }
-
-  // 2. Vimeo (vimeo.com/123456)
-  const vimeoMatch = trimmed.match(/(?:vimeo\.com\/)(\d+)/i);
-  if (vimeoMatch && vimeoMatch[1]) {
-    return {
-      type: 'vimeo',
-      url: `https://player.vimeo.com/video/${vimeoMatch[1]}`,
-      id: vimeoMatch[1],
-    };
-  }
-
-  // 3. Direct video file (/uploads/videos/..., .mp4, .webm, .ogg, .mov, blob:)
-  const isDirectVideo =
-    trimmed.startsWith('/uploads/videos/') ||
-    trimmed.startsWith('blob:') ||
-    /\.(mp4|webm|ogg|mov|mkv)(\?.*)?$/i.test(trimmed);
-
-  if (isDirectVideo) {
-    return {
-      type: 'direct',
-      url: trimmed,
-    };
-  }
-
-  // 4. Default URL (may be generic embed or external host)
-  if (trimmed.startsWith('http://') || trimmed.startsWith('https://')) {
-    return {
-      type: 'iframe',
-      url: trimmed,
-    };
-  }
-
-  return {
-    type: 'direct',
-    url: trimmed,
-  };
-};
+import { ZoomIn, Eye } from 'lucide-react';
+import { parseVideoUrl } from '../../utils/videoUtils';
 
 /**
  * Universal video walkthrough player supporting uploaded files, YouTube, Vimeo, and direct links
@@ -66,6 +10,7 @@ export const VideoPlayer = ({
   fallbackImageUrl,
   title = 'Project Demo',
   className = '',
+  onExpandImage,
 }) => {
   const videoInfo = parseVideoUrl(videoUrl);
 
@@ -85,6 +30,7 @@ export const VideoPlayer = ({
     return (
       <video
         src={videoInfo.url}
+        poster={fallbackImageUrl}
         controls
         playsInline
         preload="metadata"
@@ -93,24 +39,41 @@ export const VideoPlayer = ({
     );
   }
 
+  // When no video URL is provided, display high-resolution image with expand action
   return (
-    <div className={`relative w-full h-full flex items-center justify-center group ${className}`}>
+    <div
+      onClick={onExpandImage}
+      className={`relative w-full h-full flex items-center justify-center group overflow-hidden ${
+        onExpandImage ? 'cursor-pointer' : ''
+      } ${className}`}
+      role={onExpandImage ? 'button' : undefined}
+      tabIndex={onExpandImage ? 0 : undefined}
+      onKeyDown={(e) => {
+        if (onExpandImage && (e.key === 'Enter' || e.key === ' ')) {
+          e.preventDefault();
+          onExpandImage();
+        }
+      }}
+      aria-label={onExpandImage ? `View full resolution preview of ${title}` : title}
+    >
       {fallbackImageUrl ? (
         <>
           <img
             src={fallbackImageUrl}
             alt={title}
-            className="w-full h-full object-cover opacity-80 group-hover:scale-105 transition-transform duration-500 rounded-2xl"
+            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 rounded-2xl"
           />
-          <div className="absolute inset-0 bg-slate-950/40 flex items-center justify-center rounded-2xl">
-            <div className="w-16 h-16 rounded-2xl bg-blue-600/90 text-white flex items-center justify-center shadow-2xl shadow-blue-600/50 group-hover:scale-110 group-hover:bg-blue-500 transition-all cursor-pointer">
-              <Play size={28} className="fill-current ml-1" />
+          <div className="absolute inset-0 bg-slate-950/30 group-hover:bg-slate-950/50 flex items-center justify-center transition-colors rounded-2xl">
+            <div className="px-4 py-2 rounded-xl bg-slate-900/90 border border-white/20 text-slate-100 flex items-center gap-2 text-xs font-mono font-semibold shadow-xl group-hover:scale-105 group-hover:border-sky-400/50 group-hover:text-sky-300 transition-all">
+              <ZoomIn size={16} className="text-sky-400" />
+              <span>Inspect Fullscreen</span>
             </div>
           </div>
         </>
       ) : (
-        <div className="w-full h-full bg-slate-900 rounded-2xl flex items-center justify-center text-slate-500 text-xs font-mono">
-          No Video or Cover Image
+        <div className="w-full h-full bg-slate-900 rounded-2xl flex flex-col items-center justify-center text-slate-500 text-xs font-mono space-y-2 p-6 text-center">
+          <Eye size={24} className="text-slate-600" />
+          <span>Visual Architecture Asset Available on Request</span>
         </div>
       )}
     </div>

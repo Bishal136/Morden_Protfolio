@@ -11,6 +11,8 @@ import {
   FolderGit2,
   X,
   PlusCircle,
+  Image as ImageIcon,
+  Film,
 } from 'lucide-react';
 import { selectIsAuthenticated } from '../../features/auth/authSlice';
 import {
@@ -45,7 +47,9 @@ export const ManageProjects = () => {
     shortDescription: '',
     fullDescription: '',
     coverImageUrl: '',
+    images: [],
     demoVideoUrl: '',
+    videos: [],
     role: 'Full-Stack Developer',
     duration: '',
     liveSiteUrl: '',
@@ -66,13 +70,18 @@ export const ManageProjects = () => {
 
   const openEditModal = (project) => {
     setEditingProjectId(project._id);
+    const existingImages = Array.isArray(project.images) ? [...project.images] : [];
+    const existingVideos = Array.isArray(project.videos) ? [...project.videos] : [];
+
     setFormData({
       title: project.title || '',
       slug: project.slug || '',
       shortDescription: project.shortDescription || '',
       fullDescription: project.fullDescription || '',
       coverImageUrl: project.coverImageUrl || '',
+      images: existingImages,
       demoVideoUrl: project.demoVideoUrl || '',
+      videos: existingVideos,
       role: project.role || 'Full-Stack Developer',
       duration: project.duration || '',
       liveSiteUrl: project.liveSiteUrl || '',
@@ -114,6 +123,48 @@ export const ManageProjects = () => {
     setFormData({ ...formData, features: updated });
   };
 
+  // Multiple Screenshots Handlers
+  const handleAddScreenshot = () => {
+    setFormData((prev) => ({
+      ...prev,
+      images: [...(prev.images || []), ''],
+    }));
+  };
+
+  const handleScreenshotChange = (index, url) => {
+    const updated = [...(formData.images || [])];
+    updated[index] = url;
+    setFormData((prev) => ({ ...prev, images: updated }));
+  };
+
+  const handleRemoveScreenshot = (index) => {
+    setFormData((prev) => ({
+      ...prev,
+      images: (prev.images || []).filter((_, idx) => idx !== index),
+    }));
+  };
+
+  // Multiple Walkthrough Videos Handlers
+  const handleAddVideo = () => {
+    setFormData((prev) => ({
+      ...prev,
+      videos: [...(prev.videos || []), ''],
+    }));
+  };
+
+  const handleVideoChange = (index, url) => {
+    const updated = [...(formData.videos || [])];
+    updated[index] = url;
+    setFormData((prev) => ({ ...prev, videos: updated }));
+  };
+
+  const handleRemoveVideo = (index) => {
+    setFormData((prev) => ({
+      ...prev,
+      videos: (prev.videos || []).filter((_, idx) => idx !== index),
+    }));
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setFeedback({ type: '', message: '' });
@@ -129,8 +180,29 @@ export const ManageProjects = () => {
       (f) => f.title.trim() && f.description.trim()
     );
 
+    // Sanitize image & video arrays
+    const sanitizedImages = (formData.images || [])
+      .map((img) => (typeof img === 'string' ? img.trim() : ''))
+      .filter(Boolean);
+
+    const sanitizedVideos = (formData.videos || [])
+      .map((vid) => (typeof vid === 'string' ? vid.trim() : ''))
+      .filter(Boolean);
+
+    // Determine primary assets with sensible fallbacks
+    const coverImageUrl = formData.coverImageUrl?.trim() || sanitizedImages[0] || '';
+    const demoVideoUrl = formData.demoVideoUrl?.trim() || sanitizedVideos[0] || '';
+
+    // Merge cover image and demo video into respective galleries if not already present
+    const fullImages = Array.from(new Set([coverImageUrl, ...sanitizedImages].filter(Boolean)));
+    const fullVideos = Array.from(new Set([demoVideoUrl, ...sanitizedVideos].filter(Boolean)));
+
     const payload = {
       ...formData,
+      coverImageUrl,
+      demoVideoUrl,
+      images: fullImages,
+      videos: fullVideos,
       slug: formData.slug && formData.slug.trim() ? formData.slug.trim() : undefined,
       techStack: formattedTechStack,
       features: formattedFeatures,
@@ -265,9 +337,18 @@ export const ManageProjects = () => {
                               </span>
                             )}
                           </div>
-                          <p className="text-slate-500 font-mono text-[11px]">
-                            /{project.slug}
-                          </p>
+                          <div className="flex items-center gap-2 mt-0.5">
+                            <span className="text-slate-500 font-mono text-[11px]">
+                              /{project.slug}
+                            </span>
+                            {((project.images?.length || (project.coverImageUrl ? 1 : 0)) > 0 ||
+                              (project.videos?.length || (project.demoVideoUrl ? 1 : 0)) > 0) && (
+                              <span className="text-[10px] text-slate-400 bg-slate-800/80 px-1.5 py-0.2 rounded border border-slate-700/60 font-mono flex items-center gap-1.5">
+                                <span>📷 {project.images?.length || (project.coverImageUrl ? 1 : 0)}</span>
+                                <span>🎬 {project.videos?.length || (project.demoVideoUrl ? 1 : 0)}</span>
+                              </span>
+                            )}
+                          </div>
                         </div>
                       </div>
                     </td>
@@ -474,29 +555,160 @@ export const ManageProjects = () => {
             </div>
           </div>
 
-          {/* Media Section: Cover Image & Demo Video */}
-          <div className="space-y-4 pt-2 border-t border-slate-800">
+          {/* MEDIA SECTION: MULTIPLE IMAGES & MULTIPLE VIDEOS */}
+          <div className="space-y-5 pt-3 border-t border-slate-800">
+            <div>
+              <h3 className="text-sm font-bold text-slate-100 flex items-center gap-2">
+                <ImageIcon size={16} className="text-sky-400" />
+                <span>Project Screenshots & Image Gallery</span>
+              </h3>
+              <p className="text-[11px] text-slate-400 mt-0.5">
+                Upload or link multiple high-resolution architecture diagrams, feature screenshots, and UI mockups.
+              </p>
+            </div>
+
+            {/* Primary Cover Image */}
             <MediaUploadField
               type="image"
-              label="Project Cover Image / Thumbnail"
+              label="Primary Cover Image / Thumbnail *"
               value={formData.coverImageUrl}
               onChange={(url) =>
                 setFormData({ ...formData, coverImageUrl: url })
               }
               placeholderUrl="https://images.unsplash.com/..."
-              helpText="Upload an image file (JPG, PNG, WEBP, SVG up to 15MB) or enter an external image URL."
+              helpText="Primary card thumbnail and default showcase banner. Upload (JPG, PNG, WEBP, SVG up to 15MB) or enter URL."
             />
 
-            <MediaUploadField
-              type="video"
-              label="Project Walkthrough Demo Video"
-              value={formData.demoVideoUrl}
-              onChange={(url) =>
-                setFormData({ ...formData, demoVideoUrl: url })
-              }
-              placeholderUrl="https://www.youtube.com/watch?v=... or direct MP4 URL"
-              helpText="Upload a video file (MP4, WebM, MOV up to 100MB) or enter a YouTube / Vimeo / MP4 link."
-            />
+            {/* Additional Screenshot Items */}
+            <div className="space-y-3 pl-3 border-l-2 border-slate-800">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-semibold text-slate-300">
+                  Additional Screenshots ({formData.images?.length || 0})
+                </span>
+                <button
+                  type="button"
+                  onClick={handleAddScreenshot}
+                  className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-sky-950/80 hover:bg-sky-900 border border-sky-800 text-sky-300 text-xs font-semibold transition-colors"
+                >
+                  <PlusCircle size={13} />
+                  <span>Add Screenshot</span>
+                </button>
+              </div>
+
+              {formData.images && formData.images.length > 0 ? (
+                formData.images.map((imgUrl, idx) => (
+                  <div
+                    key={idx}
+                    className="p-3 bg-slate-950/90 rounded-xl border border-slate-800/80 space-y-2 relative group"
+                  >
+                    <div className="flex items-center justify-between">
+                      <span className="text-[11px] font-mono text-slate-400 font-semibold">
+                        Screenshot #{idx + 1}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => handleRemoveScreenshot(idx)}
+                        className="p-1 rounded text-slate-500 hover:text-rose-400 hover:bg-rose-950/40 transition-colors"
+                        title="Remove screenshot"
+                      >
+                        <Trash2 size={13} />
+                      </button>
+                    </div>
+
+                    <MediaUploadField
+                      type="image"
+                      label=""
+                      value={imgUrl}
+                      onChange={(url) => handleScreenshotChange(idx, url)}
+                      placeholderUrl="https://images.unsplash.com/... or uploaded file"
+                      helpText="Upload a screenshot file or paste a direct image URL."
+                    />
+                  </div>
+                ))
+              ) : (
+                <div className="text-xs text-slate-500 italic py-1">
+                  No additional screenshots added yet. Click &quot;Add Screenshot&quot; to include more gallery images.
+                </div>
+              )}
+            </div>
+
+            {/* VIDEO SECTION */}
+            <div className="pt-4 border-t border-slate-800/80 space-y-4">
+              <div>
+                <h3 className="text-sm font-bold text-slate-100 flex items-center gap-2">
+                  <Film size={16} className="text-amber-400" />
+                  <span>Walkthrough Videos & Demonstrations</span>
+                </h3>
+                <p className="text-[11px] text-slate-400 mt-0.5">
+                  Embed or upload video recordings, Loom walkthroughs, and YouTube demos.
+                </p>
+              </div>
+
+              {/* Primary Demo Video */}
+              <MediaUploadField
+                type="video"
+                label="Primary Walkthrough Demo Video"
+                value={formData.demoVideoUrl}
+                onChange={(url) =>
+                  setFormData({ ...formData, demoVideoUrl: url })
+                }
+                placeholderUrl="https://www.youtube.com/watch?v=... or direct MP4 URL"
+                helpText="Upload an MP4/WebM file (up to 100MB) or enter a YouTube/Vimeo embed link."
+              />
+
+              {/* Additional Video Items */}
+              <div className="space-y-3 pl-3 border-l-2 border-slate-800">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-semibold text-slate-300">
+                    Additional Videos ({formData.videos?.length || 0})
+                  </span>
+                  <button
+                    type="button"
+                    onClick={handleAddVideo}
+                    className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-amber-950/80 hover:bg-amber-900 border border-amber-800 text-amber-300 text-xs font-semibold transition-colors"
+                  >
+                    <PlusCircle size={13} />
+                    <span>Add Video</span>
+                  </button>
+                </div>
+
+                {formData.videos && formData.videos.length > 0 ? (
+                  formData.videos.map((vidUrl, idx) => (
+                    <div
+                      key={idx}
+                      className="p-3 bg-slate-950/90 rounded-xl border border-slate-800/80 space-y-2 relative group"
+                    >
+                      <div className="flex items-center justify-between">
+                        <span className="text-[11px] font-mono text-slate-400 font-semibold">
+                          Additional Video #{idx + 1}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveVideo(idx)}
+                          className="p-1 rounded text-slate-500 hover:text-rose-400 hover:bg-rose-950/40 transition-colors"
+                          title="Remove video"
+                        >
+                          <Trash2 size={13} />
+                        </button>
+                      </div>
+
+                      <MediaUploadField
+                        type="video"
+                        label=""
+                        value={vidUrl}
+                        onChange={(url) => handleVideoChange(idx, url)}
+                        placeholderUrl="https://www.youtube.com/... or uploaded MP4"
+                        helpText="Upload a video file or paste a video link."
+                      />
+                    </div>
+                  ))
+                ) : (
+                  <div className="text-xs text-slate-500 italic py-1">
+                    No additional videos added. Click &quot;Add Video&quot; to include extra walkthrough recordings.
+                  </div>
+                )}
+              </div>
+            </div>
           </div>
 
           <div>

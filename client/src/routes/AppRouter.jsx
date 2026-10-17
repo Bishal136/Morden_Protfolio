@@ -17,6 +17,7 @@ import ManageProjects from '../pages/admin/ManageProjects';
 import ManageSkills from '../pages/admin/ManageSkills';
 import ManageProfile from '../pages/admin/ManageProfile';
 import ManageComments from '../pages/admin/ManageComments';
+import ManageMessages from '../pages/admin/ManageMessages';
 
 export const AppRouter = () => {
   return (
@@ -47,6 +48,7 @@ export const AppRouter = () => {
         <Route path="skills" element={<ManageSkills />} />
         <Route path="profile" element={<ManageProfile />} />
         <Route path="comments" element={<ManageComments />} />
+        <Route path="messages" element={<ManageMessages />} />
       </Route>
     </Routes>
   );
